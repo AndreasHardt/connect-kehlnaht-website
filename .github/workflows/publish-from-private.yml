@@ -12,7 +12,7 @@ concurrency:
 
 env:
   PUBLISH_TARGET: kehlnaht
-  EXPECTED_DOMAIN: kehlnaht.connect.hardt-wiehl.de
+  EXPECTED_DOMAIN: kehlnaht.hardt-wiehl.de
   APP_MODE: test
 
 jobs:
