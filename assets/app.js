@@ -1,7 +1,7 @@
 import { createEvaluationService } from './evaluation.js?v=35f3a22547ca';
 import { openReport } from './report.js?v=7e2eaafd8c9f';
-import { computeFilletGeometry, computeFilletNominalMeasurements, GEOMETRY_TOLERANCE_MM } from './geometry.js?v=5d8f886d07c1';
-import { filletGeometrySvg } from './fillet-geometry-svg.js?v=d7a8dbf377ac';
+import { computeFilletGeometry, computeFilletNominalMeasurements, GEOMETRY_TOLERANCE_MM } from './geometry.js?v=70366161d57e';
+import { filletGeometrySvg } from './fillet-geometry-svg.js?v=94442cd4a373';
 import { buttGeometrySvg } from './butt-geometry-svg.js?v=fc4fa8f283a2';
 
 const state = {
@@ -33,7 +33,8 @@ const inspectionLabels = {
   complete: 'vollständig', one_sided: 'einseitig', not_assessable: 'nicht bewertbar'
 };
 const aASourceLabels = {
-  legs: 'aus dem kleineren Schenkel', middle: 'aus dem mittleren Messwert', direct: 'direkt gemessen'
+  legs: 'aus dem kleineren Schenkel', middle: 'aus dem mittleren Messwert', direct: 'direkt gemessen',
+  model: 'aus dem maßgebenden eingeschlossenen Dreieck'
 };
 const profileLabels = {
   straight: 'gerades Profil', convex: 'Überhöhung', concave: 'Unterwölbung'
@@ -164,7 +165,7 @@ function renderGeometrySummary(result) {
     : '';
   summary.innerHTML = `<strong>Automatisch berechnete Geometrie:</strong><br>
     Nahtbreite b = <strong>${formatMm(result.b)}</strong><br>
-    Schenkelbezogene Kehlnahtdicke az = <strong>${formatMm(result.az)}</strong><br>
+    Kehlnahtdicke az aus dem kleineren Schenkel = <strong>${formatMm(result.az)}</strong><br>
     Vergleichshöhe m0 = <strong>${formatMm(result.m0)}</strong><br>
     Ungleichschenkligkeit hz = <strong>${formatMm(result.asymmetryH)}</strong><br>
     Profilabweichung senkrecht zu b = <strong>${profileText}</strong><br>

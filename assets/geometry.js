@@ -88,39 +88,36 @@ function bezierPoint(p1, control, p2, t) {
   );
 }
 
-function distanceFromOrigin(p) {
-  return Math.hypot(p.x, p.y);
+function projection(pointValue, axis) {
+  return pointValue.x * axis.x + pointValue.y * axis.y;
 }
 
-function minimumBezierDistance(p1, control, p2) {
-  const samples = 160;
-  let bestT = 0;
-  let bestDistance = distanceFromOrigin(p1);
+function minimumBezierProjection(p1, control, p2, axis) {
+  const q1 = projection(p1, axis);
+  const qc = projection(control, axis);
+  const q2 = projection(p2, axis);
+  const candidates = [0, 1];
+  const quadratic = q1 - 2 * qc + q2;
 
-  for (let index = 1; index <= samples; index += 1) {
-    const t = index / samples;
-    const distance = distanceFromOrigin(bezierPoint(p1, control, p2, t));
-    if (distance < bestDistance) {
-      bestDistance = distance;
+  if (Math.abs(quadratic) > 1e-12) {
+    const stationaryT = (q1 - qc) / quadratic;
+    if (stationaryT > 0 && stationaryT < 1) candidates.push(stationaryT);
+  }
+
+  let bestT = candidates[0];
+  let bestPoint = bezierPoint(p1, control, p2, bestT);
+  let bestProjection = projection(bestPoint, axis);
+  for (const t of candidates.slice(1)) {
+    const candidatePoint = bezierPoint(p1, control, p2, t);
+    const candidateProjection = projection(candidatePoint, axis);
+    if (candidateProjection < bestProjection) {
       bestT = t;
+      bestPoint = candidatePoint;
+      bestProjection = candidateProjection;
     }
   }
 
-  let left = Math.max(0, bestT - 1 / samples);
-  let right = Math.min(1, bestT + 1 / samples);
-  for (let iteration = 0; iteration < 48; iteration += 1) {
-    const third = (right - left) / 3;
-    const t1 = left + third;
-    const t2 = right - third;
-    const d1 = distanceFromOrigin(bezierPoint(p1, control, p2, t1));
-    const d2 = distanceFromOrigin(bezierPoint(p1, control, p2, t2));
-    if (d1 <= d2) right = t2;
-    else left = t1;
-  }
-
-  const t = (left + right) / 2;
-  const minimumPoint = bezierPoint(p1, control, p2, t);
-  return {distance: distanceFromOrigin(minimumPoint), t, point: minimumPoint};
+  return {throat: bestProjection, t: bestT, point: bestPoint};
 }
 
 export function computeFilletGeometry(input = {}) {
@@ -226,9 +223,14 @@ export function computeFilletGeometry(input = {}) {
     (middlePoint.y - interpolationU ** 2 * p1.y - interpolationT ** 2 * p2.y) / denominator,
   );
 
-  const minimum = minimumBezierDistance(p1, controlPoint, p2);
-  const aA = minimum.distance;
-  const referenceAA = Math.abs(p1.x * p2.y - p1.y * p2.x) / b;
+  // aA ist die Höhe des maßgebenden eingeschlossenen Kehlnahtdreiecks.
+  // Deshalb wird die Kontur auf die Winkelhalbierende projiziert. Der
+  // euklidisch kürzeste Abstand zur Kontur wäre bei ungleichen Schenkeln
+  // größer und würde aA fachlich falsch ansetzen.
+  const bisector = point(cosHalfGamma, sinHalfGamma);
+  const minimum = minimumBezierProjection(p1, controlPoint, p2, bisector);
+  const aA = minimum.throat;
+  const referenceAA = Math.min(z1, z2) / (2 * sinHalfGamma);
   const az = referenceAA;
   const validationErrors = [];
 
